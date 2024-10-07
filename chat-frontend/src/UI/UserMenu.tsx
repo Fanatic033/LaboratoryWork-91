@@ -2,7 +2,6 @@ import React, {useState} from "react";
 import {Avatar, Menu, MenuItem} from "@mui/material";
 import Box from "@mui/material/Box";
 import {green} from "@mui/material/colors";
-import {NavLink} from "react-router-dom";
 import Typography from "@mui/material/Typography";
 import {User} from "../types.ts";
 import {useAppDispatch} from "../app/hooks.ts";
@@ -50,9 +49,6 @@ const UserMenu: React.FC<Props> = ({user}) => {
                 >
                     <MenuItem>Profile</MenuItem>
                     <MenuItem>My Account {user.username}</MenuItem>
-                    <MenuItem component={NavLink} to={"/track-history"}>
-                        Track History
-                    </MenuItem>
                     <MenuItem onClick={handleLogout}>Logout</MenuItem>
                 </Menu>
             </Box>

@@ -20,18 +20,17 @@ app.use('/users', usersRouter);
 
 const router = express.Router();
 
-let connectedClients: { ws: WebSocket, username: string }[] = [];
+let connectedClients: { ws: WebSocket, displayName: string }[] = [];
 
 router.ws('/chat', (ws, req) => {
-
-  let username = 'Anonymous';
+  let displayName = 'Anonymous';
 
   const onlineUsers = () => {
-    const usernames = connectedClients.map(client => client.username);
+    const displayNames = connectedClients.map(client => client.displayName);
     connectedClients.forEach(client => {
       client.ws.send(JSON.stringify({
         type: 'ONLINE_USERS',
-        payload: usernames,
+        payload: displayNames,
       }));
     });
   };
@@ -45,14 +44,14 @@ router.ws('/chat', (ws, req) => {
         if (!user) {
           return ws.send(JSON.stringify({error: 'Invalid token'}));
         }
-        username = user.username;
-        connectedClients.push({ws, username});
+        displayName = user.displayName;
+        connectedClients.push({ws, displayName});
         const lastMessages = await Message.find().sort({_id: -1}).limit(30).populate('author', '_id displayName username');
         lastMessages.reverse();
         ws.send(JSON.stringify({type: 'LOAD_MESSAGES', payload: lastMessages}));
         onlineUsers();
       } else if (decodedMessage.type === 'SEND_MESSAGE') {
-        const user = await User.findOne({username});
+        const user = await User.findOne({displayName});
         if (!user) {
           return ws.send(JSON.stringify({error: 'User not found'}));
         }
@@ -91,6 +90,7 @@ router.ws('/chat', (ws, req) => {
     }
   });
 });
+
 
 app.use(router);
 

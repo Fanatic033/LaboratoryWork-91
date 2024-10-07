@@ -61,8 +61,8 @@ const ChatWindow: React.FC = () => {
 
                 <Box flexGrow={1} bgcolor="#ffffff" borderRadius="4px" border="1px solid #ddd">
                     <Box p={2} flexGrow={1} overflow="auto" height="600px">
-                        {messages.map((message) => (
-                            <Typography key={message._id} variant="body2" sx={{mb: 1}}>
+                        {messages.map((message, index) => (
+                            <Typography key={index} variant="body2" sx={{mb: 1}}>
                                 <strong>{message.author?.displayName} :</strong> {message.message}
                             </Typography>
                         ))}
