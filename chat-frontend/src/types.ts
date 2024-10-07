@@ -33,3 +33,13 @@ export interface ValidationError {
 export interface GlobalError {
     error: string;
 }
+
+export interface Message {
+    _id: string;
+    author: {
+        _id: string,
+        username: string;
+        displayName: string;
+    }
+    message: string;
+}

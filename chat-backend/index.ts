@@ -8,7 +8,6 @@ import {WebSocket} from 'ws';
 import User from './Models/User';
 import Message from './Models/Message';
 
-
 const app = express();
 expressWs(app);
 
@@ -21,11 +20,21 @@ app.use('/users', usersRouter);
 
 const router = express.Router();
 
-let connectedClients: WebSocket[] = [];
+let connectedClients: { ws: WebSocket, username: string }[] = [];
+
 router.ws('/chat', (ws, req) => {
-  console.log('client connected,total clients', connectedClients.length);
 
   let username = 'Anonymous';
+
+  const onlineUsers = () => {
+    const usernames = connectedClients.map(client => client.username);
+    connectedClients.forEach(client => {
+      client.ws.send(JSON.stringify({
+        type: 'ONLINE_USERS',
+        payload: usernames,
+      }));
+    });
+  };
 
   ws.on('message', async (message) => {
     try {
@@ -37,25 +46,34 @@ router.ws('/chat', (ws, req) => {
           return ws.send(JSON.stringify({error: 'Invalid token'}));
         }
         username = user.username;
-        connectedClients.push(ws);
-        const lastMessages = await Message.find().sort({_id: -1}).limit(30).populate('author');
+        connectedClients.push({ws, username});
+        const lastMessages = await Message.find().sort({_id: -1}).limit(30).populate('author', '_id displayName username');
         lastMessages.reverse();
         ws.send(JSON.stringify({type: 'LOAD_MESSAGES', payload: lastMessages}));
+        onlineUsers();
       } else if (decodedMessage.type === 'SEND_MESSAGE') {
         const user = await User.findOne({username});
         if (!user) {
           return ws.send(JSON.stringify({error: 'User not found'}));
         }
-        const Author = user._id;
         const newMessage = new Message({
-          author: Author,
+          author: {
+            _id: user._id,
+            displayName: user.displayName,
+          },
           message: decodedMessage.payload,
         });
         await newMessage.save();
         connectedClients.forEach(client => {
-          client.send(JSON.stringify({
+          client.ws.send(JSON.stringify({
             type: 'NEW_MESSAGE',
-            payload: {username, message: decodedMessage.payload},
+            payload: {
+              author: {
+                _id: user._id,
+                displayName: user.displayName
+              },
+              message: decodedMessage.payload
+            }
           }));
         });
       }
@@ -66,15 +84,15 @@ router.ws('/chat', (ws, req) => {
 
   ws.on('close', () => {
     console.log('client disconnected');
-    const index = connectedClients.indexOf(ws);
+    const index = connectedClients.findIndex(client => client.ws === ws);
     if (index !== -1) {
       connectedClients.splice(index, 1);
+      onlineUsers();
     }
   });
 });
 
 app.use(router);
-
 
 const run = async () => {
   await mongoose.connect(config.database);

@@ -12,9 +12,9 @@ import {
 import {usersReducer} from "../features/User/userSlice.ts";
 
 const usersPersistConfig = {
-    key: "spotify",
+    key: "chat",
     storage,
-    whiteList: ["user", "track"],
+    whiteList: ["user",],
 };
 
 const rootReducer = {
